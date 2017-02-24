@@ -1,0 +1,29 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 11.00
+# Visual Studio 2010
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "QtGUI", "QtGUI.vcxproj", "{DF2507A3-0685-44E6-B14F-16D9436C0503}"
+	ProjectSection(ProjectDependencies) = postProject
+		{2CCA6C90-5FD2-4D94-AEA9-780A3FCE0222} = {2CCA6C90-5FD2-4D94-AEA9-780A3FCE0222}
+	EndProjectSection
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "BadmCore", "..\BadmCore\BadmCore.vcxproj", "{2CCA6C90-5FD2-4D94-AEA9-780A3FCE0222}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Win32 = Debug|Win32
+		Release|Win32 = Release|Win32
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{DF2507A3-0685-44E6-B14F-16D9436C0503}.Debug|Win32.ActiveCfg = Debug|Win32
+		{DF2507A3-0685-44E6-B14F-16D9436C0503}.Debug|Win32.Build.0 = Debug|Win32
+		{DF2507A3-0685-44E6-B14F-16D9436C0503}.Release|Win32.ActiveCfg = Release|Win32
+		{DF2507A3-0685-44E6-B14F-16D9436C0503}.Release|Win32.Build.0 = Release|Win32
+		{2CCA6C90-5FD2-4D94-AEA9-780A3FCE0222}.Debug|Win32.ActiveCfg = Debug|Win32
+		{2CCA6C90-5FD2-4D94-AEA9-780A3FCE0222}.Debug|Win32.Build.0 = Debug|Win32
+		{2CCA6C90-5FD2-4D94-AEA9-780A3FCE0222}.Release|Win32.ActiveCfg = Release|Win32
+		{2CCA6C90-5FD2-4D94-AEA9-780A3FCE0222}.Release|Win32.Build.0 = Release|Win32
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+EndGlobal
