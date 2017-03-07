@@ -9,9 +9,9 @@
 #pragma warning(disable : 4996)
 
 class Player {
-  double rating;
-  double finalRating; // the final rating with penalty for missed days
-  double thisTourRating;
+  //double rating;
+  //double finalRating; // the final rating with penalty for missed days
+  //double thisTourRating;
   char* nick;
   Player* next;
   bool isHere; // is player here today or not?
@@ -21,14 +21,11 @@ class Player {
   int numUnlucky; // number of unlucky not played games in the tournament by this player before
   bool playedInFrame;
   int playedInSingle; // participated in the single-game in this tour (number of times)
+  bool myIsMagnetic; // means that players with this property must more likely play in pair trogether
 public:
   Player(const char* theNick, const int theRating = 500);
   ~Player();
 
-  void SetRating(const double theRating, const bool theThisTour = false);
-  double Rating(const bool theThisTour = false) const;
-  void SetFinalRating(const double theRating);
-  double FinalRating() const;
   char* Nick() const;
 
   void SetNext(Player* theNext) {next = theNext;}
@@ -53,6 +50,9 @@ public:
 
   int PlayedInSingle() {return playedInSingle;}
   void SetPlayedInSingle() {playedInSingle++;}
+
+  void SetMagnetic(bool theMagnetic);
+  bool IsMagnetic();
 
 };
 #endif

@@ -1,6 +1,7 @@
 #include <math.h>
 
 #include "game.h"
+#include "results.h"
 #include <iostream>
 
 #define ABS(x) ((x)>=0?(x):-(x))
@@ -137,19 +138,19 @@ static long double fact(int theFirst, int theSecond) {
   return aResult;
 }
 
-double Game::GetTeamRaiting(bool theFirstTeam, const bool theThisTour)
+double Game::GetTeamRaiting(bool theFirstTeam, const Results* theResults)
 {
   if (mySingle) {
-    return theFirstTeam ? pls[0]->Rating(theThisTour) : pls[1]->Rating(theThisTour);
+    return theFirstTeam ? theResults->Rating(pls[0]) : theResults->Rating(pls[1]);
   }
-  double aP1R = theFirstTeam ? pls[0]->Rating(theThisTour) : pls[2]->Rating(theThisTour);
-  double aP2R = theFirstTeam ? pls[1]->Rating(theThisTour) : pls[3]->Rating(theThisTour);
+  double aP1R = theFirstTeam ? theResults->Rating(pls[0]) : theResults->Rating(pls[2]);
+  double aP2R = theFirstTeam ? theResults->Rating(pls[1]) : theResults->Rating(pls[3]);
   return (1500. * aP1R - aP1R * aP1R + 1500. * aP2R - aP2R * aP2R) / (3000. - aP1R - aP2R);
 }
 
-long double Game::GetProbability(ofstream& tada, const bool theThisTour) {
-  int r1 = (int)(GetTeamRaiting(true, theThisTour));
-  int r2 = (int)(GetTeamRaiting(false, theThisTour));
+long double Game::GetProbability(ofstream& tada, const Results* theResults) {
+  int r1 = (int)(GetTeamRaiting(true, theResults));
+  int r2 = (int)(GetTeamRaiting(false, theResults));
   int r = 100000 * r1 / r2;
   //cout<<"r="<<r<<endl;
   map<int, double>::iterator anI = prb.find(r);
@@ -341,20 +342,20 @@ bool Game::IsThreeSets()
   return plays[0] * plays[1] < 0;
 }
 
-int Game::MostPossibleRating(Player* thePl)
+int Game::MostPossibleRating(Player* thePl, Results* theResults)
 {
   ofstream aTada("tadaTmp.txt");
-  int anOldRating = int(thePl->Rating(true));
+  int anOldRating = int(theResults->Rating(thePl));
   double aMinProp = -1.e+100;
   int aResult = -1;
   for(int a = 1; a < 1075; a++) {
-    thePl->SetRating(a, true);
-    double aProp = GetProbability(aTada, true);
+    theResults->SetRating(thePl, a);
+    double aProp = GetProbability(aTada, theResults);
     if (aProp > aMinProp) {
       aMinProp = aProp;
       aResult = a;
     }
   }
-  thePl->SetRating(anOldRating, true);
+  theResults->SetRating(thePl, anOldRating);
   return aResult;
 }

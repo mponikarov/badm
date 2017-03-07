@@ -36,6 +36,7 @@ public slots:
   void onSortTotal();
   void onSortSave();
   void onReport();
+  void onReportM();
   void onReportGraphics();
 
 private:

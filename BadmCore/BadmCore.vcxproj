@@ -81,6 +81,7 @@
     <ClInclude Include="player.h" />
     <ClInclude Include="players.h" />
     <ClInclude Include="readgames.h" />
+    <ClInclude Include="results.h" />
     <ClInclude Include="sample.h" />
   </ItemGroup>
   <ItemGroup>
@@ -89,6 +90,7 @@
     <ClCompile Include="player.cxx" />
     <ClCompile Include="players.cxx" />
     <ClCompile Include="readgames.cxx" />
+    <ClCompile Include="results.cxx" />
     <ClCompile Include="sample.cxx" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

@@ -11,8 +11,11 @@ class Sample {
   int myPlaces2; // number of 2-memebers games
   map<int, double> inTeamBad, contraBad, contraSinglesBad, singlesBad;
   map<Player*, int> indexes; // cash index of player in aPlayers by pointer
+  Results* myResThis; // contrainers of raitings in this tour
+  Results* myResOld; // contrainers of raitings in previous tour
 public:
-  Sample(Players& thePlayers, Game* theFirstGame, const int thePlaces4, const int thePlaces2, ofstream& tada);
+  Sample(Players& thePlayers, Game* theFirstGame, const int thePlaces4, const int thePlaces2, ofstream& tada,
+    Results* theResThis, Results* theResOld);
   void Init(Players& thePlayers, Game* theFirstGame, const int thePlaces4, const int thePlaces2, ofstream& tada);
   int GetPlaces4(); // return the result number of places with 4 players
   int GetPlaces2(); // return the result number of places with singles

@@ -1,12 +1,13 @@
 #include <math.h>
 
 #include "readgames.h"
+#include "results.h"
 
 #include <iostream>
 
 using namespace std;
 
-long double CalculateBadness(Game* theFirst, ofstream& tada, const bool theThisTour) {
+long double CalculateBadness(Game* theFirst, ofstream& tada, Results* theResults, const bool theThisTour) {
   Game* aCurrentGame;
   long double aResult = 1.;
   long double aPow = 2.; // increased significensy of the games -> reduce the power
@@ -17,9 +18,9 @@ long double CalculateBadness(Game* theFirst, ofstream& tada, const bool theThisT
     if (!theThisTour) {
       aPow = pow(aPow, (long double)0.99);
 	  //tada<<"pow = "<<aPow<<endl;
-      aResult *= pow(aCurrentGame->GetProbability(tada, theThisTour), aPow) * 10000.;
+      aResult *= pow(aCurrentGame->GetProbability(tada, theResults), aPow) * 10000.;
     } else {
-      aResult *= aCurrentGame->GetProbability(tada, theThisTour) * 10000.;
+      aResult *= aCurrentGame->GetProbability(tada, theResults) * 10000.;
     }
 	  //tada<<"aResult="<<aResult<<endl;
   }
@@ -99,22 +100,20 @@ void ReadGames(char* theFile, Game*& theFirstGame, Players& thePlayers, ofstream
   tada<<"Now collected data: "<<thePlayers.Num()<<" players; "<<aGames<<" games"<<endl;
 }
 
-void CalculateRatings(Game*& theFirstGame, Players& thePlayers, ofstream& tada, const bool theThisTour) {
+void CalculateRatings(Game*& theFirstGame, Players& thePlayers, ofstream& tada, Results* theResults, const bool theThisTour) {
   // initial ratings are 500
+  theResults->SetInitialRating(500.);
   int aPSize = thePlayers.Num();
-  for(int aPNum = 0; aPNum < aPSize; aPNum++) {
-    thePlayers.Get(aPNum)->SetRating(500., theThisTour);
-  }
   int aDelta = 32; // found the best number on the real numbers
   int aMinModifNum = 10; // allowed number of minimal modifications
   // calculate ratings
   Game *aCurrentGame = 0;
   tada<<"Start ratings calculation"<<endl;
-  long double aPropability = CalculateBadness(theFirstGame, tada, theThisTour);; // general propability of the current sortings: the optimization function value
+  long double aPropability = CalculateBadness(theFirstGame, tada, theResults, theThisTour);; // general propability of the current sortings: the optimization function value
   int anIterations = 0;
   bool aModified = 1;
   while(aModified) {
-    long double aTotalProp = CalculateBadness(theFirstGame, tada, theThisTour);
+    long double aTotalProp = CalculateBadness(theFirstGame, tada, theResults, theThisTour);
     if (aPropability > aTotalProp) { // it means that locally good changes cause worse result in general
       if (aDelta == 1) {
         aMinModifNum--;
@@ -131,18 +130,20 @@ void CalculateRatings(Game*& theFirstGame, Players& thePlayers, ofstream& tada, 
     for(int aPNum = 0; aPNum < aPSize; aPNum++) {
       //tada<<"Try to update rating of player "<<aCurrentPlayer->Nick()<<endl;
       Player* aPlayer = thePlayers.Get(aPNum);
-      aPlayer->SetRating(aPlayer->Rating(theThisTour) + aDelta, theThisTour); // increase rating
-      long double aProp = CalculateBadness(theFirstGame, tada, theThisTour);
-      if (aPlayer->Rating(theThisTour) <= 1000 && aProp > aPropability) {
+      double aRat = theResults->Rating(aPlayer) + aDelta;
+      theResults->SetRating(aPlayer, aRat); // increase rating
+      long double aProp = CalculateBadness(theFirstGame, tada, theResults, theThisTour);
+      if (aRat <= 1000 && aProp > aPropability) {
         aDeltas[aPNum] = + aDelta;
         aModified = 1;
         //tada<<"Increase raiting "<<thePlayers.Get(aPNum)->Nick()<<" by "<<aDelta<<" up to "<<thePlayers.Get(aPNum)->Rating(theThisTour)<<endl;
         //continue;
-        aPlayer->SetRating(aPlayer->Rating(theThisTour) - aDelta, theThisTour); // leave rating
+        theResults->SetRating(aPlayer, aRat - aDelta); // leave rating
       } else {
-        aPlayer->SetRating(aPlayer->Rating(theThisTour) - 2 * aDelta, theThisTour); // decrease rating
-        aProp = CalculateBadness(theFirstGame, tada, theThisTour);
-        if (aProp > aPropability && aPlayer->Rating(theThisTour) > 0) {
+        aRat = aRat - 2 * aDelta;
+        theResults->SetRating(aPlayer, aRat); // decrease rating
+        aProp = CalculateBadness(theFirstGame, tada, theResults, theThisTour);
+        if (aProp > aPropability && aRat > 0) {
           aDeltas[aPNum] = -aDelta;
           aModified = 1;
           //tada<<"Decrease raiting "<<thePlayers.Get(aPNum)->Nick()<<" by "<<aDelta<<" down to "<<thePlayers.Get(aPNum)->Rating(theThisTour)<<endl;
@@ -150,12 +151,12 @@ void CalculateRatings(Game*& theFirstGame, Players& thePlayers, ofstream& tada, 
         } else { // no modification
           aDeltas[aPNum] = 0;
         }
-        aPlayer->SetRating(aPlayer->Rating(theThisTour) + aDelta, theThisTour); // leave rating
+        theResults->SetRating(aPlayer, theResults->Rating(aPlayer) + aDelta); // leave rating
       }
     }
     // now set the calculated deltas
     for(int aPNum = 0; aPNum < aPSize; aPNum++) {
-      thePlayers.Get(aPNum)->SetRating(thePlayers.Get(aPNum)->Rating(theThisTour) + aDeltas[aPNum], theThisTour); // leave rating
+      theResults->SetRating(thePlayers.Get(aPNum), theResults->Rating(thePlayers.Get(aPNum)) + aDeltas[aPNum]); // leave rating
     }
     if (!aModified && aDelta > 1) {
       aModified = 1;
@@ -165,31 +166,18 @@ void CalculateRatings(Game*& theFirstGame, Players& thePlayers, ofstream& tada, 
   }
   tada<<"A rating "<<(theThisTour ? "(this tour) " : "whole")<<" propab="<<aPropability<<endl;
   for(int aPNum = 0; aPNum < thePlayers.Num(); aPNum++) {
-    tada<<thePlayers.Get(aPNum)->Rating(theThisTour)<<" "<<thePlayers.Get(aPNum)->Nick()<<endl;
+    tada<<theResults->Rating(thePlayers.Get(aPNum))<<" "<<thePlayers.Get(aPNum)->Nick()<<endl;
   }
 
-  // sort players by raiting
-  SortByRating(thePlayers, theThisTour);
+  theResults->SortByRating();
 }
 
-void SortByRating(Players& thePlayers, const bool theThisTour, const bool theFinalRating)
-{
-  for(int anIter =  thePlayers.Num() - 1; anIter > 0; anIter--) {
-    for(int aPl = 0; aPl < anIter; aPl++) {
-      if ((theFinalRating ? thePlayers.Get(aPl)->FinalRating() : thePlayers.Get(aPl)->Rating(theThisTour)) < (theFinalRating ? thePlayers.Get(aPl + 1)->FinalRating() : thePlayers.Get(aPl + 1)->Rating(theThisTour))) {
-        Player* aTmp = thePlayers.Get(aPl);
-        thePlayers.Set(aPl, thePlayers.Get(aPl + 1));
-        thePlayers.Set(aPl + 1, aTmp);
-      }
-    }
-  }
-}
-
-void CalculateRatingsDiscrete(Game*& theFirstGame, Players& thePlayers, ofstream& tada, const bool theThisTour) {
+void CalculateRatingsDiscrete(Game*& theFirstGame, Players& thePlayers, ofstream& tada, Results* theResults, const bool theThisTour) {
   // initial ratings are 500
+  theResults->SetInitialRating(500.);
+
   int aPSize = thePlayers.Num();
   for(int aPNum = 0; aPNum < aPSize; aPNum++) {
-    thePlayers.Get(aPNum)->SetRating(500., theThisTour);
     thePlayers.Get(aPNum)->ResetGamesNum();
   }
   // calculate ratings by discrete formula (used in the tournament places definition)
@@ -201,8 +189,8 @@ void CalculateRatingsDiscrete(Game*& theFirstGame, Players& thePlayers, ofstream
     //double aTeam1Raiting = aCurrentGame->GetPlayer(0)->Rating() + aCurrentGame->GetPlayer(1)->Rating();
     //double aTeam2Raiting = aCurrentGame->GetPlayer(2)->Rating() + aCurrentGame->GetPlayer(3)->Rating();
     // another formula, computed to take care about strong with weak pair disbalance
-    double aTeam1Raiting = aCurrentGame->GetTeamRaiting(true, theThisTour);
-    double aTeam2Raiting = aCurrentGame->GetTeamRaiting(false, theThisTour);
+    double aTeam1Raiting = aCurrentGame->GetTeamRaiting(true, theResults);
+    double aTeam2Raiting = aCurrentGame->GetTeamRaiting(false, theResults);
 
     double aTeam1Relative = aTeam1Score * (aTeam1Raiting + aTeam2Raiting);
     double aTeam2Relative = aTeam2Score * (aTeam1Raiting + aTeam2Raiting);
@@ -221,8 +209,8 @@ void CalculateRatingsDiscrete(Game*& theFirstGame, Players& thePlayers, ofstream
       aNumPl = 2;
       // singles are more valuable
       aB1 /= 1.25; aB2 /= 1.25;
-      aDeltas[0] = (aTeam1Relative * aCurrentGame->GetPlayer(0)->Rating(theThisTour) / aTeam1Raiting - aCurrentGame->GetPlayer(0)->Rating(theThisTour)) / aB1;
-      aDeltas[1] = (aTeam2Relative * aCurrentGame->GetPlayer(1)->Rating(theThisTour) / aTeam2Raiting - aCurrentGame->GetPlayer(1)->Rating(theThisTour)) / aB2;
+      aDeltas[0] = (aTeam1Relative * theResults->Rating(aCurrentGame->GetPlayer(0)) / aTeam1Raiting - theResults->Rating(aCurrentGame->GetPlayer(0))) / aB1;
+      aDeltas[1] = (aTeam2Relative * theResults->Rating(aCurrentGame->GetPlayer(1)) / aTeam2Raiting - theResults->Rating(aCurrentGame->GetPlayer(1))) / aB2;
     } else {
       if (aCurrentGame->GetPlayer(0)->GamesNum() == 0 || aCurrentGame->GetPlayer(1)->GamesNum() == 0 ||
         aCurrentGame->GetPlayer(2)->GamesNum() == 0 || aCurrentGame->GetPlayer(3)->GamesNum() == 0) {
@@ -232,23 +220,22 @@ void CalculateRatingsDiscrete(Game*& theFirstGame, Players& thePlayers, ofstream
         aB2 = sqrt(aCurrentGame->GetPlayer(2)->GamesNum() + aCurrentGame->GetPlayer(3)->GamesNum() + 2.);
       }
       aNumPl = 4;
-      aDeltas[0] = (aTeam1Relative * aCurrentGame->GetPlayer(0)->Rating(theThisTour) / aTeam1Raiting - aCurrentGame->GetPlayer(0)->Rating(theThisTour)) / aB1;
-      aDeltas[1] = (aTeam1Relative * aCurrentGame->GetPlayer(1)->Rating(theThisTour) / aTeam1Raiting - aCurrentGame->GetPlayer(1)->Rating(theThisTour)) / aB1;
-      aDeltas[2] = (aTeam2Relative * aCurrentGame->GetPlayer(2)->Rating(theThisTour) / aTeam2Raiting - aCurrentGame->GetPlayer(2)->Rating(theThisTour)) / aB2;
-      aDeltas[3] = (aTeam2Relative * aCurrentGame->GetPlayer(3)->Rating(theThisTour) / aTeam2Raiting - aCurrentGame->GetPlayer(3)->Rating(theThisTour)) / aB2;
+      aDeltas[0] = (aTeam1Relative * theResults->Rating(aCurrentGame->GetPlayer(0)) / aTeam1Raiting - theResults->Rating(aCurrentGame->GetPlayer(0))) / aB1;
+      aDeltas[1] = (aTeam1Relative * theResults->Rating(aCurrentGame->GetPlayer(1)) / aTeam1Raiting - theResults->Rating(aCurrentGame->GetPlayer(1))) / aB1;
+      aDeltas[2] = (aTeam2Relative * theResults->Rating(aCurrentGame->GetPlayer(2)) / aTeam2Raiting - theResults->Rating(aCurrentGame->GetPlayer(2))) / aB2;
+      aDeltas[3] = (aTeam2Relative * theResults->Rating(aCurrentGame->GetPlayer(3)) / aTeam2Raiting - theResults->Rating(aCurrentGame->GetPlayer(3))) / aB2;
     }
     // store new raitings and add number of played games to each player
     for(int aPlrNum = 0; aPlrNum < aNumPl; aPlrNum++) {
       tada<<"Player "<<aCurrentGame->GetPlayer(aPlrNum)->Nick()<<" "<<aDeltas[aPlrNum]<<endl;
-      aCurrentGame->GetPlayer(aPlrNum)->SetRating(aCurrentGame->GetPlayer(aPlrNum)->Rating(theThisTour) + aDeltas[aPlrNum], theThisTour);
+      theResults->SetRating(aCurrentGame->GetPlayer(aPlrNum), theResults->Rating(aCurrentGame->GetPlayer(aPlrNum)) + aDeltas[aPlrNum]);
       aCurrentGame->GetPlayer(aPlrNum)->IncGamesNum();
     }
   }
-  // sort players by raiting
-  SortByRating(thePlayers, theThisTour);
+  theResults->SortByRating();
   // output players sorted by raitings
   tada<<"Discrete computed raintings"<<endl;
   for(int aPNum = 0; aPNum < thePlayers.Num(); aPNum++) {
-    tada<<thePlayers.Get(aPNum)->Rating(theThisTour)<<" "<<thePlayers.Get(aPNum)->Nick()<<" games played "<<thePlayers.Get(aPNum)->GamesNum()<<endl;
+    tada<<theResults->Rating(thePlayers.Get(aPNum))<<" "<<thePlayers.Get(aPNum)->Nick()<<" games played "<<thePlayers.Get(aPNum)->GamesNum()<<endl;
   }
 }

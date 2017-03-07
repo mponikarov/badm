@@ -1,4 +1,5 @@
 #include "sample.h"
+#include "results.h"
 
 // number of variants counted
 #define VARS_NUM 100
@@ -20,7 +21,11 @@ static void DecodeID(const int theID, int& thePlayer1, int& thePlayer2) {
   thePlayer2 = theID / MAX_PLAYERS;
 }
 
-Sample::Sample(Players& thePlayers, Game* theFirstGame, const int thePlaces4, const int thePlaces2, ofstream& tada) {
+Sample::Sample(Players& thePlayers, Game* theFirstGame, const int thePlaces4, const int thePlaces2, ofstream& tada,
+  Results* theResThis, Results* theResOld)
+{
+  myResThis = theResThis;
+  myResOld = theResOld;
   Init(thePlayers, theFirstGame, thePlaces4, thePlaces2, tada);
 }
 
@@ -45,14 +50,15 @@ const double Sample::TeamBadness(Players& theVariant, const int theStartIndex, b
       tada<<"Singless badness: 0vs1 "<<singlesBad[aP0]<<" + "<<singlesBad[aP1]<<endl;
 
     for(int aThis = 0; aThis < 2; aThis++) {
-      double aP1R = theVariant.Get(theStartIndex)->Rating(aThis == 1);
-      double aP2R = theVariant.Get(theStartIndex + 1)->Rating(aThis == 1);
+      Results* aResults = (aThis == 1) ? myResThis : myResOld;
+      double aP1R = aResults->Rating(theVariant.Get(theStartIndex));
+      double aP2R = aResults->Rating(theVariant.Get(theStartIndex + 1));
 
       double aMiddle = (aP1R + aP2R) / 2.;
       double aRes = ((aP1R - aMiddle) * (aP1R - aMiddle) + (aP2R - aMiddle) * (aP2R - aMiddle)) / aMiddle / aMiddle / 5.;
       if (!aThis) {// not this tour badness causes only half badness
-		  aRes /= (sqrt(1. * theVariant.Get(theStartIndex)->GamesNum() * theVariant.Get(theStartIndex + 1)->GamesNum()) * 1.25 + 3); // less than 3 is not enough
-	  }
+        aRes /= (sqrt(1. * theVariant.Get(theStartIndex)->GamesNum() * theVariant.Get(theStartIndex + 1)->GamesNum()) * 1.25 + 3); // less than 3 is not enough
+      }
 
       if (dump)
         tada<<"ThisTour "<<aThis<<" ratings "<<aP1R<<" vs "<<aP2R<<" badness="<<aRes<<endl;
@@ -79,11 +85,12 @@ const double Sample::TeamBadness(Players& theVariant, const int theStartIndex, b
     //double aRT2 = theVariant.Get(aStartIndex + 2)->Rating() + theVariant.Get(aStartIndex + 3)->Rating();
     // another formula, computed to take care about strong with weak pair disbalance
     for(int aThis = 0; aThis < 2; aThis++) {
-      double aP1R = theVariant.Get(theStartIndex)->Rating(aThis == 1);
-      double aP2R = theVariant.Get(theStartIndex + 1)->Rating(aThis == 1);
+      Results* aResults = (aThis == 1) ? myResThis : myResOld;
+      double aP1R = aResults->Rating(theVariant.Get(theStartIndex));
+      double aP2R = aResults->Rating(theVariant.Get(theStartIndex + 1));
       double aRT1 = (1500. * aP1R - aP1R * aP1R + 1500. * aP2R - aP2R * aP2R) / (3000. - aP1R - aP2R);
-      aP1R = theVariant.Get(theStartIndex + 2)->Rating(aThis == 1);
-      aP2R = theVariant.Get(theStartIndex + 3)->Rating(aThis == 1);
+      aP1R = aResults->Rating(theVariant.Get(theStartIndex + 2));
+      aP2R = aResults->Rating(theVariant.Get(theStartIndex + 3));
       double aRT2 = (1500. * aP1R - aP1R * aP1R + 1500. * aP2R - aP2R * aP2R) / (3000. - aP1R - aP2R);
 
       double aMiddle = (aRT1 + aRT2) / 2.;
@@ -96,6 +103,17 @@ const double Sample::TeamBadness(Players& theVariant, const int theStartIndex, b
       if (dump)
         tada<<"ThisTour "<<aThis<<" ratings "<<aRT1<<" vs "<<aRT2<<" badness="<<aRes<<endl;
       aResult += aRes;
+    }
+    // bonus for magnetism
+    if (theVariant.Get(theStartIndex)->IsMagnetic() && theVariant.Get(theStartIndex + 1)->IsMagnetic()) {
+      aResult -= 0.5;
+      if (dump)
+        tada<<"Magnetic pair "<<-0.5<<endl;
+    }
+    if (theVariant.Get(theStartIndex + 2)->IsMagnetic() && theVariant.Get(theStartIndex + 3)->IsMagnetic()) {
+      aResult -= 0.5;
+      if (dump)
+        tada<<"Magnetic pair "<<-0.5<<endl;
     }
   }
 

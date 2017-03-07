@@ -7,6 +7,7 @@
 #include <fstream>
 #include <map>
 
+class Results;
 using namespace std;
 
 // class for game emulation
@@ -46,7 +47,7 @@ public:
 
   Game* Next();
   void SetNext(Game* theNext) {next = theNext;}
-  long double Game::GetProbability(ofstream& tada, const bool theThisTour); // returns the probability of the current game
+  long double Game::GetProbability(ofstream& tada, const Results* theResults); // returns the probability of the current game
   Player* GetPlayer(int anIndex);
   
   double GetWinDelta2(); // returns the delta to increase raiting in 2 sets
@@ -66,7 +67,7 @@ public:
   // for scores computation like: points of team / summ points
   double GetSummScores(bool theFirstTeam);
   // returns the current raiting of first or second team (0-1000)
-  double GetTeamRaiting(bool theFirstTeam, const bool theThisTour);
+  double GetTeamRaiting(bool theFirstTeam, const Results* theResults);
   // real scores
   int Score(const int theNum) {return scores[theNum];}
   void SetThisTour(bool theThisTour) {myThisTour = theThisTour;}
@@ -77,7 +78,7 @@ public:
   bool isDisabled();
 
   // computes the most possible rating of the given player if only this game is played and ratings of other players (in this tours) are like this
-  int MostPossibleRating(Player* thePl);
+  int MostPossibleRating(Player* thePl, Results* theResults);
 };
 
 #endif

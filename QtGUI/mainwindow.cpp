@@ -15,6 +15,9 @@
 #include <fstream>
 #include <BadmCore/common.h>
 
+// report for magnetic pairs only
+#define MAGNETIC_REPORT
+
 MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent)
 {
   setWindowTitle("Badminton 2015");
@@ -66,6 +69,11 @@ void MainWindow::statisticsLayout(QGridLayout* theLayout)
   QPushButton* aReport = new QPushButton("Report", this);
   connect(aReport, SIGNAL(released()), this, SLOT(onReport()));
   aVLayout->addWidget(aReport);
+#ifdef MAGNETIC_REPORT
+  QPushButton* aReportM = new QPushButton("Magnetic rep", this);
+  connect(aReportM, SIGNAL(released()), this, SLOT(onReportM()));
+  aVLayout->addWidget(aReportM);
+#endif
   QPushButton* anExit = new QPushButton("Exit", this);
   connect(anExit, SIGNAL(released()), this, SLOT(onExit()));
   aVLayout->addWidget(anExit);
@@ -384,6 +392,18 @@ void MainWindow::onReportGraphics() {
   QGraphicsView* aView = new QGraphicsView(aScene);
   aLayout->addWidget(aView, 0, 0);
   aView->show();
+}
+
+void MainWindow::onReportM() {
+  std::string aHTML = myCore->magneticReport();
+  centralWidget()->hide();
+  setCentralWidget(new QWidget());
+  QGridLayout* aLayout = new QGridLayout(centralWidget());
+
+  QWebView* aWebView = new QWebView(this);
+  QString aQHTML(QTextCodec::codecForName("CP1251")->toUnicode(aHTML.c_str()));
+  aWebView->setHtml(aQHTML);
+  aLayout->addWidget(aWebView, 0, 0);
 }
 
 MainWindow::~MainWindow()

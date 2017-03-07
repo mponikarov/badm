@@ -11,6 +11,7 @@
 class Game;
 class Players;
 class Sample;
+class Results;
 
 // storage for player that is today
 struct PlayerToday {
@@ -51,6 +52,9 @@ class EXPORT_BADMCORE Common {
   Players* myPlayers; ///< players presented in all games 
   Sample* mySample; ///< results of sortings
   int myCurrentDate; ///< the date of the latest game
+  Results* myResThisTour; ///< rating results current, with all games
+  Results* myResOld; ///< rating results before this tour (not discrete)
+  Results* myResFinal; ///< the final rating
 
 public:
   /// General constructor
@@ -86,4 +90,6 @@ public:
   std::string saveReport();
   /// Returns the information about the game of the player
   GameInfo getGame(const int thePlayerIndex, const int theGameNum);
+  /// Returns the report about magnetic people
+  std::string magneticReport();
 };

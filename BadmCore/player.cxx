@@ -4,9 +4,6 @@
 Player::Player(const char* theNick, const int theRating) {
   nick = new char[4];
   strcpy(nick, theNick);
-  rating = theRating;
-  finalRating = theRating;
-  thisTourRating = theRating;
   next = 0;
   isHere = true;
   misfortune = 0;
@@ -15,28 +12,10 @@ Player::Player(const char* theNick, const int theRating) {
   playedInFrame = false;
   justPassed = false;
   playedInSingle = 0;
+  myIsMagnetic = false;
 }
 
 Player::~Player() {free(nick);}
-
-void Player::SetRating(const double theRating, const bool theThisTour) {
-  if (theThisTour)
-    thisTourRating = theRating;
-  else
-    rating = theRating;
-}
-
-double Player::Rating(const bool theThisTour) const {
-  return theThisTour ? thisTourRating : rating;
-}
-
-void Player::SetFinalRating(const double theRating) {
-  finalRating = theRating;
-}
-
-double Player::FinalRating() const {
-  return finalRating;
-}
 
 char* Player::Nick() const {
   return nick;
@@ -59,4 +38,14 @@ void Player::FrameEnd() {
     if (misfortune < 0) misfortune = 0;
   }
   justPassed = false;
+}
+
+void Player::SetMagnetic(bool theMagnetic)
+{
+	myIsMagnetic = theMagnetic;
+}
+
+bool Player::IsMagnetic()
+{
+  return myIsMagnetic;
 }
