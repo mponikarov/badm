@@ -44,10 +44,20 @@ const double Sample::TeamBadness(Players& theVariant, const int theStartIndex, b
     if (dump)
       tada<<"Contra badness: 0vs1 "<<contraBad[GenerateID(aP0, aP1)]<<" + total match: "<<contraSinglesBad[GenerateID(aP0, aP1)]<<endl;
 
-    aResult += singlesBad[aP0];
-    aResult += singlesBad[aP1];
+    aResult += singlesBad[aP0]; // twice at near frames is bad
+    aResult += singlesBad[aP1]; // twice at near frames is bad
     if (dump)
-      tada<<"Singless badness: 0vs1 "<<singlesBad[aP0]<<" + "<<singlesBad[aP1]<<endl;
+      tada<<"Singless badness: 0and1 "<<singlesBad[aP0] + (singlesBad[aP0] >= 0.04 ? 0.1 : 0)<<" + "<<singlesBad[aP1] + (singlesBad[aP1] >= 0.04 ? 0.1 : 0)<<endl;
+    if (singlesLastFrame.find(aP0) != singlesLastFrame.end()) {
+      aResult += 0.2;
+      if (dump)
+        tada<<"Singless last frame 0: "<<0.2<<endl;
+    }
+    if (singlesLastFrame.find(aP1) != singlesLastFrame.end()) {
+      aResult += 0.2;
+      if (dump)
+        tada<<"Singless last frame 1: "<<0.2<<endl;
+    }
 
     for(int aThis = 0; aThis < 2; aThis++) {
       Results* aResults = (aThis == 1) ? myResThis : myResOld;
@@ -55,7 +65,7 @@ const double Sample::TeamBadness(Players& theVariant, const int theStartIndex, b
       double aP2R = aResults->Rating(theVariant.Get(theStartIndex + 1));
 
       double aMiddle = (aP1R + aP2R) / 2.;
-      double aRes = ((aP1R - aMiddle) * (aP1R - aMiddle) + (aP2R - aMiddle) * (aP2R - aMiddle)) / aMiddle / aMiddle / 5.;
+      double aRes = ((aP1R - aMiddle) * (aP1R - aMiddle) + (aP2R - aMiddle) * (aP2R - aMiddle)) / aMiddle / aMiddle / 2.; // less than 5 is too small, so 2
       if (!aThis) {// not this tour badness causes only half badness
         aRes /= (sqrt(1. * theVariant.Get(theStartIndex)->GamesNum() * theVariant.Get(theStartIndex + 1)->GamesNum()) * 1.25 + 3); // less than 3 is not enough
       }
@@ -94,7 +104,7 @@ const double Sample::TeamBadness(Players& theVariant, const int theStartIndex, b
       double aRT2 = (1500. * aP1R - aP1R * aP1R + 1500. * aP2R - aP2R * aP2R) / (3000. - aP1R - aP2R);
 
       double aMiddle = (aRT1 + aRT2) / 2.;
-      double aRes = ((aRT1 - aMiddle) * (aRT1 - aMiddle) + (aRT2 - aMiddle) * (aRT2 - aMiddle)) / aMiddle / aMiddle / 5.;
+      double aRes = ((aRT1 - aMiddle) * (aRT1 - aMiddle) + (aRT2 - aMiddle) * (aRT2 - aMiddle)) / aMiddle / aMiddle / 2.; // less than 5 is too small, so 2
       if (!aThis) {// not this tour badness causes only half badness
         aRes /= (sqrt(sqrt(1. * theVariant.Get(theStartIndex)->GamesNum() * theVariant.Get(theStartIndex + 1)->GamesNum() *
 			theVariant.Get(theStartIndex + 2)->GamesNum() * theVariant.Get(theStartIndex + 3)->GamesNum())) * 1.25 + 3); // less than 3 is not enough
@@ -192,6 +202,10 @@ void Sample::Init(Players& thePlayers, Game* theFirstGame, const int thePlaces4,
   for(Game* aGame = theFirstGame; aGame != 0; aGame = aGame->Next()) {
     if (!aGame->ThisTour()) // only this tour is used for in and contra badness computation
       continue;
+    if (aGame->IsLastInFrame()) {
+      singlesLastFrame.clear();
+    }
+
     int aPlayer0 = indexes[aGame->GetPlayer(0)];
     int aPlayer1 = indexes[aGame->GetPlayer(1)];
     if (aGame->IsSingle()) {
@@ -199,10 +213,10 @@ void Sample::Init(Players& thePlayers, Game* theFirstGame, const int thePlaces4,
         contraBad[GenerateID(aPlayer0, aPlayer1)] += 0.02;  // for singles plays the contra in doubles is 2 times higher
         contraSinglesBad[GenerateID(aPlayer0, aPlayer1)] += 0.1;  // but contra for singles is almost prevented
       }
-      aGame->GetPlayer(0)->SetPlayedInSingle();
-      aGame->GetPlayer(1)->SetPlayedInSingle();
       singlesBad[aPlayer0]+=0.05; // 0.02 is noth enough (AKA 3 singles in one day) but 0.1 is too much when not enough people
       singlesBad[aPlayer1]+=0.05;
+      singlesLastFrame.insert(aPlayer0);
+      singlesLastFrame.insert(aPlayer1);
     } else {
       int aPlayer2 = indexes[aGame->GetPlayer(2)];
       int aPlayer3 = indexes[aGame->GetPlayer(3)];
@@ -215,7 +229,9 @@ void Sample::Init(Players& thePlayers, Game* theFirstGame, const int thePlaces4,
     }
     // forget old badness (but not for singles badness)
     double aForgetCoeff = 1.;
-    if (aGame->IsLastInFrame()) aForgetCoeff = 0.9;
+    if (aGame->IsLastInFrame()) {
+      aForgetCoeff = 0.9;
+    }
     if (aGame->IsLastInDay()) aForgetCoeff = 0.7;
     if (aForgetCoeff != 1.) {
       map<int, double>::iterator aTeamIter = inTeamBad.begin();
@@ -226,7 +242,7 @@ void Sample::Init(Players& thePlayers, Game* theFirstGame, const int thePlaces4,
         aContraIter->second *= aForgetCoeff;
       map<int, double>::iterator aSinglesIter = singlesBad.begin();
       for(; aSinglesIter != singlesBad.end(); aSinglesIter++)
-        aSinglesIter->second *= aForgetCoeff;
+        aSinglesIter->second *= aForgetCoeff * aForgetCoeff;
     }
   }
   // output badness
@@ -278,6 +294,12 @@ void Sample::Init(Players& thePlayers, Game* theFirstGame, const int thePlaces4,
   int aCount = 0; // number of checked variants
   int aVar0Stop = myPlaces2 ? aNumberOfPlayers - 1 : 1;
   while(aVar[0] != aVar0Stop) { // if no singles first is allways at first place, iterate until it is so
+    tada<<"Next version variant "<<aCurrentBadness<<endl;
+    for(int aVarNum = 0; aVarNum < thePlaces4; aVarNum++)
+      TeamBadness(aVariant, aVarNum * 4, false, tada, true);
+    for(int aVarNum = 0; aVarNum < thePlaces2; aVarNum++)
+      TeamBadness(aVariant, thePlaces4 * 4 + aVarNum * 2, true, tada, true);
+
     // searching for the next near variant
     aNumInVariant--;
     if (IsLast(aNumInVariant)) { // reduce current badness for this current team

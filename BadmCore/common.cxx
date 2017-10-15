@@ -7,7 +7,7 @@
 #include <sstream>
 
 // to compute and show penalties
-//#define FINAL_REPORT
+#define FINAL_REPORT
 // to show nice colors and final rating with penalties included
 //#define CELEBRATION_REPORT
 
@@ -15,7 +15,7 @@ map<string, string> myNames;
 
 Common::Common() 
 {
-  // decryption of nicks
+  // decription of nicks
   myNames["VTN"] = "Владимир Тюрин";
   myNames["MPV"] = "Михаил Поникаров";
   myNames["ADO"] = "Алексей Дергачев";
@@ -47,6 +47,7 @@ Common::Common()
   myNames["MSH"] = "Максим Шкирев";
   myNames["OTV"] = "Ольга Тимакова";
   myNames["ABO"] = "Алексей Быстров";
+  myNames["SKA"] = "Светлана Ковалева";
 
   myFirstGame = 0;
   myCurrentDate = 111111;
@@ -400,7 +401,8 @@ std::string Common::saveReport()
   // calculate ratings by discrete formula (used in the tournament places definition)
   bool aIsFirstGameToday = true;
   Results* aResBeforeToday = new Results; // results of player before current date
-  for(Game *aCurrentGame = myFirstGame; aCurrentGame; aCurrentGame = aCurrentGame->Next()) {
+  Game *aCurrentGame;
+  for(aCurrentGame = myFirstGame; aCurrentGame; aCurrentGame = aCurrentGame->Next()) {
     bool isSingle = aCurrentGame->IsSingle();
     int aPl0 = 0;
     int aPl1 = isSingle ? 0 : 1;
@@ -468,7 +470,7 @@ std::string Common::saveReport()
       if (aCurrentGame->NumWin(true) + aCurrentGame->NumWin(false) == 3)
         sql<<aCurrentGame->Score(4)<<" as set3_12, "<<aCurrentGame->Score(5)<<" as set3_34,"<<endl;
       else sql<<"0 as set3_12, 0 as set3_34,"<<endl;
-      sql<<"    0 as type, 44 as tournament"<<endl;
+      sql<<"    0 as type, 45 as tournament"<<endl;
       sql<<"  from"<<endl;
       sql<<"    (select max(id)+1 as max_id from games) maxid_table,"<<endl;
       sql<<"    (select id as id1 from players where nick='"<<aCurrentGame->GetPlayer(aPl0)->Nick()<<"') id1_table,"<<endl;
@@ -518,70 +520,28 @@ std::string Common::saveReport()
   }
 
 #ifdef FINAL_REPORT
-  // compute old positions with penalties
-  Game *aCurrentGame;
-  map<Player*, int> anOldGamesNum;
+  // compute number of games for each player: before today
+  map<Player*, int> aBeforeGamesNum, aGamesNum;
   for(aCurrentGame = myFirstGame; aCurrentGame; aCurrentGame = aCurrentGame->Next()) {
     if (!aCurrentGame->ThisTour()) continue;
-    anOldGamesNum[aCurrentGame->GetPlayer(0)]++;
-    anOldGamesNum[aCurrentGame->GetPlayer(1)]++;
+    aGamesNum[aCurrentGame->GetPlayer(0)]++;
+    aGamesNum[aCurrentGame->GetPlayer(1)]++;
     if (!aCurrentGame->IsSingle()) {
-      anOldGamesNum[aCurrentGame->GetPlayer(2)]++;
-      anOldGamesNum[aCurrentGame->GetPlayer(3)]++;
+      aGamesNum[aCurrentGame->GetPlayer(2)]++;
+      aGamesNum[aCurrentGame->GetPlayer(3)]++;
     }
-    if (aCurrentGame->Date() == myCurrentDate) {
-      // set all next games disabled (including this) to compute the intermediate rating (during this game sortings)
-      aCurrentGame->setDisabled(true, true);
-      CalculateRatingsDiscrete(myFirstGame, *myPlayers, tada, true);
-      // compute the max games at that time
-      int aPNum, aMaxGames = 1;
-      for(aPNum = 0; aPNum < myPlayers->Num(); aPNum++) {
-        Player* aP = myPlayers->Get(aPNum);
-        if (anOldGamesNum.find(aP) != anOldGamesNum.end() && anOldGamesNum[aP] > aMaxGames) {
-          aMaxGames = anOldGamesNum[aP];
-        }
-      }
-      // apply penalty
-      for(aPNum = 0; aPNum < myPlayers->Num(); aPNum++) {
-        Player* aP = myPlayers->Get(aPNum);
-        if (anOldGamesNum.find(aP) == anOldGamesNum.end())
-          continue;
-        int aGamesNum = anOldGamesNum[aP] + aP->UnluckyThisTour();
-        if (aGamesNum * 2 < aMaxGames) {
-          double aPercent = aGamesNum * 2. / aMaxGames;
-          aP->SetRating(aP->Rating(true) * aPercent, true);
-        }
-      }
-      SortByRating(*myPlayers, true, false);
-      int aNumInTable = 0;
-      for(aPNum = 0; aPNum < myPlayers->Num(); aPNum++) {
-        Player* aP = myPlayers->Get(aPNum);
-        if (aP->GamesNum()) {
-          aNumInTable++;
-          aPlOldPosition[aP] = aNumInTable;
-        }
-      }
-      aCurrentGame->setDisabled(false, true);
-      break;
+    if (aCurrentGame->Date() == myCurrentDate) continue;
+    aBeforeGamesNum[aCurrentGame->GetPlayer(0)]++;
+    aBeforeGamesNum[aCurrentGame->GetPlayer(1)]++;
+    if (!aCurrentGame->IsSingle()) {
+      aBeforeGamesNum[aCurrentGame->GetPlayer(2)]++;
+      aBeforeGamesNum[aCurrentGame->GetPlayer(3)]++;
     }
-  }
-  CalculateRatingsDiscrete(myFirstGame, *myPlayers, tada, true);
-
-  // apply penalties
-  map<Player*, double> aPlPenalty;
-  map<Player*, int> aPlPenaltyGames; // number of games to play to avoid penalties
-  for(int aPNum = 0; aPNum < myPlayers->Num(); aPNum++) {
-    Player* aP = myPlayers->Get(aPNum);
-    int aGamesNum = aP->GamesNum() + aP->UnluckyThisTour();
-    if (aGamesNum * 2 < aMaxGames) {
-      double aPercent = aGamesNum * 2. / aMaxGames;
-      aPlPenalty[aP] = (int)(aP->Rating(true) * (1. - aPercent));
-      aPlPenaltyGames[aP] = int(aMaxGames / 2 - aGamesNum);
-      aP->SetFinalRating(aP->Rating(true) * aPercent);
-    } else aP->SetFinalRating(aP->Rating(true));
-  }
-  SortByRating(*myPlayers, true, true);
-#else // just set final rating equal to the rating
+  // just apply penalty to the results before today and the current
+  aResBeforeToday->ApplyPenalties(aBeforeGamesNum);
+  aResBeforeToday->SortByRating();
+  aRes.ApplyPenalties(aGamesNum);
+  aRes.SortByRating();
 #endif
 
   report<<"</table><br>"<<endl<<endl;
@@ -626,7 +586,7 @@ std::string Common::saveReport()
       if (aNumInTable == 1) aCelColor = "#ffd700";
       else if (aNumInTable == 2) aCelColor = "#c0c0c0";
       else if (aNumInTable == 3) aCelColor = "#cd7f32";
-      else if (aNumInTable == 7) aCelColor = "#ff69b4";
+      else if (aNumInTable == 8) aCelColor = "#ff69b4";
       repNames<<"<tr><td nowrap bgcolor=\""<<aCelColor<<"\">"<<name(aP)<<"</td></tr>";
 #else
       repNames<<"<tr><td nowrap>"<<name(aP)<<"</td></tr>";
@@ -640,18 +600,14 @@ std::string Common::saveReport()
 
       // raiting and delta of the player
       repRating<<"<tr><td align=right>"
-#ifdef CELEBRATION_REPORT
-        <<(int)(aP->Rating(true) - (aPercent == 0 ? 0. : aPlPenalty[aP]))
-#else
         <<(int)(aRes.Rating(aP))
-#endif
         <<"</td><td align=left nowrap><font color=\"#C0C0C0\">";
       OutputDelta(repRating, (int)(aRes.Rating(aP) - aResBeforeToday->Rating(aP)));
       repRating<<"</font></td></tr>";
 #ifdef FINAL_REPORT
       // penalty
       if (aPercent != 0) {
-        repPenalt<<"<tr><td align=center nowrap>"<<aPlPenalty[aP]<<" <font color=\"#C0C0C0\">("<<aPlPenaltyGames[aP]<<")</font> </td></tr>";
+        repPenalt<<"<tr><td align=center nowrap>"<<int(aRes.AppliedPenalty(aP))<<" <font color=\"#C0C0C0\">("<<aRes.PenaltyGames(aP)<<")</font> </td></tr>";
       } else {
         repPenalt<<"<tr><td align=center> </font>-</td></tr>";
       }
@@ -765,7 +721,18 @@ std::string Common::magneticReport()
       aP2 = aCurrentGame->GetPlayer(1);
       aV1 = aCurrentGame->GetPlayer(2);
       aV2 = aCurrentGame->GetPlayer(3);
-    } else if (aCurrentGame->GetPlayer(2)->IsMagnetic() && aCurrentGame->GetPlayer(3)->IsMagnetic()) {
+    }
+    if (aP1) {
+      double aVRating = aCurrentGame->GetTeamRaiting(!isFirst, &aRatings);
+      aResult<<aP1->Nick()<<" "<<aP2->Nick()<<" vs "<<aV1->Nick()<<" "<<aV2->Nick()<<" ("<<(int)aVRating<<")  ";
+      aResult<<aCurrentGame->Score(isFirst ? 0 : 1)<<":"<<aCurrentGame->Score(isFirst ? 1 : 0)<<" "<<aCurrentGame->Score(isFirst ? 2 : 3)<<":"<<aCurrentGame->Score(isFirst ? 3 : 2);
+      if (aCurrentGame->IsThreeSets())
+        aResult<<" "<<aCurrentGame->Score(isFirst ? 4 : 5)<<":"<<aCurrentGame->Score(isFirst ? 5 : 4);
+      aResult<<"  => "<<aVRating * aCurrentGame->GetSummScores(isFirst) * 2;
+      aResult<<"<br>"<<endl;
+      aP1 = 0;
+    }
+    if (aCurrentGame->GetPlayer(2)->IsMagnetic() && aCurrentGame->GetPlayer(3)->IsMagnetic()) {
       isFirst = false;
       aP1 = aCurrentGame->GetPlayer(2);
       aP2 = aCurrentGame->GetPlayer(3);

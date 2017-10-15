@@ -41,6 +41,7 @@ void ReadGames(char* theFile, Game*& theFirstGame, Players& thePlayers, ofstream
   while(!feof(f)) {
     // try to read date
     while(!feof(f)) {
+      long int anInitPos = abs(ftell(f)); // position before reading
       fscanf(f, "%c", &(aDat[0]));
       if (aDat[0] ==' ' || aDat[0] =='\n' || aDat[0] =='\r' || aDat[0] == 0)
         continue;
@@ -55,7 +56,9 @@ void ReadGames(char* theFile, Game*& theFirstGame, Players& thePlayers, ofstream
         theCoeff += theDate;
         thePlayers.DayEnd();
       } else { // start of acronym: out the character back to read game correctly
-        if (!feof(f) && aDat[0] !='x') fseek(f, -1, SEEK_CUR);
+        if (!feof(f) && aDat[0] !='x') {
+          fseek(f, anInitPos, SEEK_SET);
+        }
         break;
       }
     }

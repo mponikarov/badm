@@ -2,6 +2,7 @@
 #define SAMPLE_H
 
 #include "game.h"
+#include <set>
 
 // class for games organization: distribution players among the places
 // p1 and p2 vs p3 and p4
@@ -10,6 +11,7 @@ class Sample {
   int myPlaces4; // number of 4-memebers games
   int myPlaces2; // number of 2-memebers games
   map<int, double> inTeamBad, contraBad, contraSinglesBad, singlesBad;
+  set<int> singlesLastFrame; // indexes of player who played singles last frame
   map<Player*, int> indexes; // cash index of player in aPlayers by pointer
   Results* myResThis; // contrainers of raitings in this tour
   Results* myResOld; // contrainers of raitings in previous tour

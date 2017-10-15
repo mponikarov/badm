@@ -48,8 +48,8 @@ public:
   const int UnluckyThisTour() const {return numUnlucky;}
   void IncUnluckyThisTour() {numUnlucky++;}
 
-  int PlayedInSingle() {return playedInSingle;}
-  void SetPlayedInSingle() {playedInSingle++;}
+  void SetMagnetic(bool theMagnetic);
+  bool IsMagnetic();
 
   void SetMagnetic(bool theMagnetic);
   bool IsMagnetic();
