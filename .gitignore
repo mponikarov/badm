@@ -11,3 +11,9 @@ QtGUI/ipch
 QtGUI/mainwindow_moc.cpp
 QtGUI/QtGUI.opensdf
 QtGUI/QtGUI.vcxproj.user
+OldData.txt.*
+pass
+*.suo
+*.vcxproj.filters
+tada*
+unix2dos.exe

@@ -11,6 +11,9 @@ class Results {
   std::map<Player*, double> ratings; ///< player to rating 
   std::list<Player*> sorted; ///< sorted players by the rating
   double initRating; ///< initial rating if nothing is defined for the player
+
+  int maxGames; ///< max number of games of some player (used for penalty calculation)
+  std::map<Player*, int> gamesNum; ///< number of played games played by player (used for penalty calculation)
 public:
   static const int NO_POSITION = -1000; // means that this player is not in this results table
 
@@ -24,6 +27,12 @@ public:
   int Position(const Player* thePlayer) const;
   // Returns players in the sorted order
   const std::list<Player*>& Sorted() {return sorted;} ///< sorted players by the rating
+  // decreases ratings if less than half of games was played
+  void ApplyPenalties(std::map<Player*, int>& theGamesNum);
+  // Returns the penalty applied for the rating
+  double AppliedPenalty(Player* thePlayer);
+  // Returns the number of games left to play to avoid penalties
+  int PenaltyGames(Player* thePlayer);
 };
 
 #endif

@@ -51,3 +51,47 @@ int Results::Position(const Player* thePlayer) const
   }
   return NO_POSITION;
 }
+
+void Results::ApplyPenalties(std::map<Player*, int>& theGamesNum)
+{
+  // maximum number of games
+  int aMax = 0;
+  std::map<Player*, int>::iterator aGNumIter = theGamesNum.begin();
+  for(; aGNumIter != theGamesNum.end(); aGNumIter++) {
+    int aNum = aGNumIter->second + aGNumIter->first->UnluckyThisTour();
+    if (aNum > aMax)
+      aMax = aNum;
+  }
+  std::map<Player*, double>::iterator aPlIter = ratings.begin();
+  for(; aPlIter != ratings.end(); aPlIter++) {
+    Player* aP = aPlIter->first;
+    int aGamesNum = aP->UnluckyThisTour();
+    if (theGamesNum.find(aP) != theGamesNum.end())
+      aGamesNum += theGamesNum[aP];
+    gamesNum[aP] = aGamesNum;
+    if (aGamesNum * 2 < aMax) {
+      double aPercent = aGamesNum * 2. / aMax;
+      aPlIter->second *= aPercent;
+    }
+  }
+  maxGames = aMax;
+}
+
+double Results::AppliedPenalty(Player* thePlayer)
+{
+  int aPlGam = gamesNum[thePlayer];
+  if (aPlGam * 2 < maxGames) {
+    double aPercent = aPlGam * 2. / maxGames;
+    return ratings[thePlayer] * (1. / aPercent - 1.);
+  }
+  return 0;
+}
+
+int Results::PenaltyGames(Player* thePlayer)
+{
+  int aPlGam = gamesNum[thePlayer];
+  if (aPlGam * 2 < maxGames) {
+    return maxGames / 2 - aPlGam;
+  }
+  return 0;
+}
