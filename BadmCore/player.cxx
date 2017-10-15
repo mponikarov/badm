@@ -15,7 +15,7 @@ Player::Player(const char* theNick, const int theRating) {
   myIsMagnetic = false;
 }
 
-Player::~Player() {free(nick);}
+Player::~Player() {delete [] nick;}
 
 char* Player::Nick() const {
   return nick;

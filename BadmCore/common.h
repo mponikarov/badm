@@ -5,7 +5,8 @@
 #ifdef EXPORTS_BADMCORE
 #  define EXPORT_BADMCORE __declspec(dllexport)
 #else
-#  define EXPORT_BADMCORE __declspec(dllimport)
+//#  define EXPORT_BADMCORE __declspec(dllimport)
+#define EXPORT_BADMCORE
 #endif
 
 class Game;

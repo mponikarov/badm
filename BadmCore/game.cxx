@@ -3,6 +3,7 @@
 #include "game.h"
 #include "results.h"
 #include <iostream>
+#include <cstdlib>
 
 #define ABS(x) ((x)>=0?(x):-(x))
 #define MIN(x, y) (((x) < (y))?(x):(y))

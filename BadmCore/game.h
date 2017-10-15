@@ -47,7 +47,7 @@ public:
 
   Game* Next();
   void SetNext(Game* theNext) {next = theNext;}
-  long double Game::GetProbability(ofstream& tada, const Results* theResults); // returns the probability of the current game
+  long double GetProbability(ofstream& tada, const Results* theResults); // returns the probability of the current game
   Player* GetPlayer(int anIndex);
   
   double GetWinDelta2(); // returns the delta to increase raiting in 2 sets

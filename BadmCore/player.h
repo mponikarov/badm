@@ -51,8 +51,5 @@ public:
   void SetMagnetic(bool theMagnetic);
   bool IsMagnetic();
 
-  void SetMagnetic(bool theMagnetic);
-  bool IsMagnetic();
-
 };
 #endif

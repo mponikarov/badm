@@ -2,6 +2,7 @@
 #include "player.h"
 
 #include <iostream>
+#include <cstdlib>
 
 Players::Players(const int theNum) {
   myNum = 0;

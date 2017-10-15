@@ -5,11 +5,18 @@
 #include "results.h"
 #include <set>
 #include <sstream>
+#include <cstdlib>
 
 // to compute and show penalties
-#define FINAL_REPORT
+//#define FINAL_REPORT
 // to show nice colors and final rating with penalties included
 //#define CELEBRATION_REPORT
+
+#ifdef EMPTY_PATH
+#define FILE_PATH(single_file) #single_file
+#else
+#define FILE_PATH(single_file) "/storage/emulated/0/Android/data/com.mpv.badm/files/"#single_file
+#endif
 
 map<string, string> myNames;
 
@@ -58,11 +65,11 @@ Common::Common()
 void Common::ReadAll() 
 {
   myPlayers = new Players(0); // all registered players
-  ofstream tada("tada.txt");
+  ofstream tada(FILE_PATH(tada.txt));
   tada<<"Hello!"<<endl;
 
   tada<<"Read misfortune guests coefficients"<<endl;
-  FILE* misf =fopen("misf_coeff.txt", "rt");
+  FILE* misf =fopen(FILE_PATH(misf_coeff.txt), "rt");
   map<char, map<char, map<char, int> > > aMisfCoeffs; // 3 symbols of nick -> coefficient of misfortune
   while(misf && !feof(misf)) {
     static char aGuest[4];
@@ -75,19 +82,20 @@ void Common::ReadAll()
       tada<<"Misfortune coeff for guest "<<aGuest<<"="<<aC<<endl;
     }
   }
-  fclose(misf);
+  if (misf)
+    fclose(misf);
 
   //ReadGames("OCNOpen3.txt", aFirstGame, aFirstPlayer, tada);
   int aSRandCoeff = 1;
-  ReadGames("OldData.txt", myFirstGame, *myPlayers, tada, aSRandCoeff, myCurrentDate, aMisfCoeffs, false);
-  ReadGames("ThisTour.txt", myFirstGame, *myPlayers, tada, aSRandCoeff, myCurrentDate, aMisfCoeffs, true);
-  ReadGames("today.txt", myFirstGame, *myPlayers, tada, aSRandCoeff, myCurrentDate, aMisfCoeffs, true);
+  ReadGames(FILE_PATH(OldData.txt), myFirstGame, *myPlayers, tada, aSRandCoeff, myCurrentDate, aMisfCoeffs, false);
+  ReadGames(FILE_PATH(ThisTour.txt), myFirstGame, *myPlayers, tada, aSRandCoeff, myCurrentDate, aMisfCoeffs, true);
+  ReadGames(FILE_PATH(today.txt), myFirstGame, *myPlayers, tada, aSRandCoeff, myCurrentDate, aMisfCoeffs, true);
 
   tada<<"Random coefficient "<<aSRandCoeff<<endl;
   srand(aSRandCoeff);
 
   tada<<"Read magnetic people"<<endl;
-  FILE* magn =fopen("magnetic.txt", "rt");
+  FILE* magn =fopen(FILE_PATH(magnetic.txt), "rt");
   while(magn && !feof(magn)) {
     static char aPl[4];
     Game::ReadNick(aPl, magn);
@@ -108,7 +116,7 @@ void Common::ReadAll()
   for(aPNum = 0; aPNum < myPlayers->Num(); aPNum++)
     myPlayers->Get(aPNum)->IsHere(0);
   // read players presented today
-  ifstream pl("players.txt");
+  ifstream pl(FILE_PATH(players.txt));
   while(pl) {
     char aNick[4] = {0, 0, 0, 0};
     for(int b = 0; b < 3; b++) pl>>aNick[b];
@@ -123,7 +131,7 @@ void Common::ReadAll()
     aCurrent->IsHere(1);
   }
   // open initial raitings file to use them
-  FILE* irat = fopen("init_raitings.txt", "rt");
+  FILE* irat = fopen(FILE_PATH(init_raitings.txt), "rt");
   if (irat == NULL) {
     tada<<"File 'init_raitings.txt' not found!"<<endl;
     exit(1);
@@ -211,7 +219,7 @@ int Common::PreparePlay(PlayerToday*& thePlayers)
     anIndexes[myPlayers->Get(aP)] = aP;
   }
   // read players presented today
-  ifstream pl("players.txt");
+  ifstream pl(FILE_PATH(players.txt));
   while(pl) {
     char aNick[4] = {0, 0, 0, 0};
     for(int b = 0; b < 3; b++) pl>>aNick[b];
@@ -241,7 +249,7 @@ void Common::sort(PlayerToday* thePlayers, const int theNumPools4, const int the
       myPlayers->GetByNick(thePlayers[a].myNick)->IsHere(1); // set only checked
   }
   // init and launch sortings
-  ofstream tada("tadaSort.txt");
+  ofstream tada(FILE_PATH(tadaSort.txt));
   mySample = new Sample(*myPlayers, myFirstGame, theNumPools4, theNumPools2, tada, myResThisTour, myResOld);
 }
 
@@ -252,7 +260,7 @@ GameToday Common::sorted(int theIndex)
     aResult.myNicks[a] = mySample->GetGame(theIndex)->GetPlayer(a)->Nick();
   }
   // compute the propability
-  ofstream tada("tadaTmp.txt");
+  ofstream tada(FILE_PATH(tadaTmp.txt));
   Game* aGame;
   aResult.isSingle = mySample->GetGame(theIndex)->IsSingle();
   if (aResult.isSingle)
@@ -382,9 +390,9 @@ GameInfo Common::getGame(const int thePlayerIndex, const int theGameNum)
 
 std::string Common::saveReport()
 {
-  ofstream report("report.htm");
-  ofstream sql("sql.sql");
-  ofstream tada("tadaTmp.txt");
+  ofstream report(FILE_PATH(report.htm));
+  ofstream sql(FILE_PATH(sql.sql));
+  ofstream tada(FILE_PATH(tadaTmp.txt));
 
   // init report file
   report<<"<html><head><meta http-equiv=\"Content-Type\" content=\"text/html; charset=windows-1251\">"<<endl;
@@ -470,7 +478,7 @@ std::string Common::saveReport()
       if (aCurrentGame->NumWin(true) + aCurrentGame->NumWin(false) == 3)
         sql<<aCurrentGame->Score(4)<<" as set3_12, "<<aCurrentGame->Score(5)<<" as set3_34,"<<endl;
       else sql<<"0 as set3_12, 0 as set3_34,"<<endl;
-      sql<<"    0 as type, 45 as tournament"<<endl;
+      sql<<"    0 as type, 44 as tournament"<<endl;
       sql<<"  from"<<endl;
       sql<<"    (select max(id)+1 as max_id from games) maxid_table,"<<endl;
       sql<<"    (select id as id1 from players where nick='"<<aCurrentGame->GetPlayer(aPl0)->Nick()<<"') id1_table,"<<endl;
@@ -537,6 +545,7 @@ std::string Common::saveReport()
       aBeforeGamesNum[aCurrentGame->GetPlayer(2)]++;
       aBeforeGamesNum[aCurrentGame->GetPlayer(3)]++;
     }
+  }
   // just apply penalty to the results before today and the current
   aResBeforeToday->ApplyPenalties(aBeforeGamesNum);
   aResBeforeToday->SortByRating();
@@ -685,7 +694,7 @@ std::string Common::saveReport()
   report<<"</head></html>"<<endl;
   report.close();
   // re-read file to return the text
-  ifstream is ("report.htm", ifstream::binary);
+  ifstream is (FILE_PATH(report.htm), ifstream::binary);
   if (is) {
     // get length of file:
     is.seekg (0, is.end);
