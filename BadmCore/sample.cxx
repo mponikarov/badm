@@ -40,25 +40,15 @@ const double Sample::TeamBadness(Players& theVariant, const int theStartIndex, b
     if (dump) {
       tada<<theVariant.Get(theStartIndex)->Nick()<<" vs "<<theVariant.Get(theStartIndex + 1)->Nick()<<endl;
     }
-    aResult += contraBad[GenerateID(aP0, aP1)];
-    aResult += contraSinglesBad[GenerateID(aP0, aP1)];
+    aResult += myBads.badness(Badness::BAD_CONTRADOUBLE, aP0, aP1);
+    aResult += myBads.badness(Badness::BAD_CONTRASINGLE, aP0, aP1);
     if (dump)
-      tada<<"Contra badness: 0vs1 "<<contraBad[GenerateID(aP0, aP1)]<<" + total match: "<<contraSinglesBad[GenerateID(aP0, aP1)]<<endl;
+      tada<<"Contra badness: 0vs1 "<<myBads.badness(Badness::BAD_CONTRADOUBLE, aP0, aP1)<<" + total match: "<<myBads.badness(Badness::BAD_CONTRASINGLE, aP0, aP1)<<endl;
 
-    aResult += singlesBad[aP0]; // twice at near frames is bad
-    aResult += singlesBad[aP1]; // twice at near frames is bad
+    aResult += myBads.badness(Badness::BAD_SINGLES, aP0); // twice at near frames is bad
+    aResult += myBads.badness(Badness::BAD_SINGLES, aP1); // twice at near frames is bad
     if (dump)
-      tada<<"Singless badness: 0and1 "<<singlesBad[aP0] + (singlesBad[aP0] >= 0.04 ? 0.1 : 0)<<" + "<<singlesBad[aP1] + (singlesBad[aP1] >= 0.04 ? 0.1 : 0)<<endl;
-    if (singlesLastFrame.find(aP0) != singlesLastFrame.end()) {
-      aResult += 0.2;
-      if (dump)
-        tada<<"Singless last frame 0: "<<0.2<<endl;
-    }
-    if (singlesLastFrame.find(aP1) != singlesLastFrame.end()) {
-      aResult += 0.2;
-      if (dump)
-        tada<<"Singless last frame 1: "<<0.2<<endl;
-    }
+      tada<<"Singless badness: 0and1 "<<myBads.badness(Badness::BAD_SINGLES, aP0)<<" + "<<myBads.badness(Badness::BAD_SINGLES, aP1)<<endl;
 
     for(int aThis = 0; aThis < 2; aThis++) {
       Results* aResults = (aThis == 1) ? myResThis : myResOld;
@@ -81,16 +71,16 @@ const double Sample::TeamBadness(Players& theVariant, const int theStartIndex, b
     if (dump) {
       tada<<theVariant.Get(theStartIndex)->Nick()<<" "<<theVariant.Get(theStartIndex + 1)->Nick()<<" vs "<<theVariant.Get(theStartIndex + 2)->Nick()<<" "<<theVariant.Get(theStartIndex + 3)->Nick()<<endl;
     }
-    aResult = inTeamBad[GenerateID(aP0, aP1)];
-    aResult += inTeamBad[GenerateID(aP2, aP3)];
+    aResult = myBads.badness(Badness::BAD_INTEAM, aP0, aP1);
+    aResult += myBads.badness(Badness::BAD_INTEAM, aP2, aP3);
     if (dump)
-      tada<<"InTeam badness: "<<inTeamBad[GenerateID(aP0, aP1)]<<" and "<<inTeamBad[GenerateID(aP2, aP3)]<<endl;
-    aResult += contraBad[GenerateID(aP0, aP2)];
-    aResult += contraBad[GenerateID(aP0, aP3)];
-    aResult += contraBad[GenerateID(aP1, aP2)];
-    aResult += contraBad[GenerateID(aP1, aP3)];
+      tada<<"InTeam badness: "<<myBads.badness(Badness::BAD_INTEAM, aP0, aP1)<<" and "<<myBads.badness(Badness::BAD_INTEAM, aP2, aP3)<<endl;
+    aResult += myBads.badness(Badness::BAD_CONTRADOUBLE, aP0, aP2);
+    aResult += myBads.badness(Badness::BAD_CONTRADOUBLE, aP0, aP3);
+    aResult += myBads.badness(Badness::BAD_CONTRADOUBLE, aP1, aP2);
+    aResult += myBads.badness(Badness::BAD_CONTRADOUBLE, aP1, aP3);
     if (dump)
-      tada<<"Contra badness: 0vs2 "<<contraBad[GenerateID(aP0, aP2)]<<" 0vs3 "<<contraBad[GenerateID(aP0, aP3)]<<" 1vs2 "<<contraBad[GenerateID(aP1, aP2)]<<" 1vs3 "<<contraBad[GenerateID(aP1, aP3)]<<endl;
+      tada<<"Contra badness: 0vs2 "<<myBads.badness(Badness::BAD_CONTRADOUBLE, aP0, aP2)<<" 0vs3 "<<myBads.badness(Badness::BAD_CONTRADOUBLE, aP0, aP3)<<" 1vs2 "<<myBads.badness(Badness::BAD_CONTRADOUBLE, aP1, aP2)<<" 1vs3 "<<myBads.badness(Badness::BAD_CONTRADOUBLE, aP1, aP3)<<endl;
 
     //double aRT1 = theVariant.Get(aStartIndex)->Rating() + theVariant.Get(aStartIndex + 1)->Rating();
     //double aRT2 = theVariant.Get(aStartIndex + 2)->Rating() + theVariant.Get(aStartIndex + 3)->Rating();
@@ -211,62 +201,29 @@ void Sample::Init(Players& thePlayers, Game* theFirstGame, const int thePlaces4,
     int aPlayer1 = indexes[aGame->GetPlayer(1)];
     if (aGame->IsSingle()) {
       if (aPlayer0 && aPlayer1) {
-        contraBad[GenerateID(aPlayer0, aPlayer1)] += 0.02;  // for singles plays the contra in doubles is 2 times higher
-        contraSinglesBad[GenerateID(aPlayer0, aPlayer1)] += 0.1;  // but contra for singles is almost prevented
+        myBads.contraSingle(aPlayer0, aPlayer1);
       }
-      singlesBad[aPlayer0]+=0.05; // 0.02 is noth enough (AKA 3 singles in one day) but 0.1 is too much when not enough people
-      singlesBad[aPlayer1]+=0.05;
       singlesLastFrame.insert(aPlayer0);
       singlesLastFrame.insert(aPlayer1);
     } else {
       int aPlayer2 = indexes[aGame->GetPlayer(2)];
       int aPlayer3 = indexes[aGame->GetPlayer(3)];
-      if (aPlayer0 && aPlayer1) inTeamBad[GenerateID(aPlayer0, aPlayer1)] += 0.01;
-      if (aPlayer2 && aPlayer3) inTeamBad[GenerateID(aPlayer2, aPlayer3)] += 0.01;
-      if (aPlayer0 && aPlayer2) contraBad[GenerateID(aPlayer0, aPlayer2)] += 0.005;
-      if (aPlayer0 && aPlayer3) contraBad[GenerateID(aPlayer0, aPlayer3)] += 0.005;
-      if (aPlayer1 && aPlayer2) contraBad[GenerateID(aPlayer1, aPlayer2)] += 0.005;
-      if (aPlayer1 && aPlayer3) contraBad[GenerateID(aPlayer1, aPlayer3)] += 0.005;
+      if (aPlayer0 && aPlayer1) myBads.inTeam(aPlayer0, aPlayer1);
+      if (aPlayer2 && aPlayer3) myBads.inTeam(aPlayer2, aPlayer3);
+      if (aPlayer0 && aPlayer2) myBads.contraDouble(aPlayer0, aPlayer2);
+      if (aPlayer0 && aPlayer3) myBads.contraDouble(aPlayer0, aPlayer3);
+      if (aPlayer1 && aPlayer2) myBads.contraDouble(aPlayer1, aPlayer2);
+      if (aPlayer1 && aPlayer3) myBads.contraDouble(aPlayer1, aPlayer3);
     }
+    if (aGame->IsLastInDay())
+      myBads.dayPassed();
+    else if (aGame->IsLastInFrame())
+      myBads.framePassed();
     // forget old badness (but not for singles badness)
     double aForgetCoeff = 1.;
     if (aGame->IsLastInFrame()) {
       aForgetCoeff = 0.9;
     }
-    if (aGame->IsLastInDay()) aForgetCoeff = 0.7;
-    if (aForgetCoeff != 1.) {
-      map<int, double>::iterator aTeamIter = inTeamBad.begin();
-      for(; aTeamIter != inTeamBad.end(); aTeamIter++)
-        aTeamIter->second *= aForgetCoeff;
-      map<int, double>::iterator aContraIter = contraBad.begin();
-      for(; aContraIter != contraBad.end(); aContraIter++)
-        aContraIter->second *= aForgetCoeff;
-      map<int, double>::iterator aSinglesIter = singlesBad.begin();
-      for(; aSinglesIter != singlesBad.end(); aSinglesIter++)
-        aSinglesIter->second *= aForgetCoeff * aForgetCoeff;
-    }
-  }
-  // output badness
-  map<int, double>::iterator aTeamIter = inTeamBad.begin();
-  for(; aTeamIter != inTeamBad.end(); aTeamIter++) {
-    if (aTeamIter->first == 0) continue;
-    int aPl1, aPl2;
-    DecodeID(aTeamIter->first, aPl1, aPl2);
-    tada<<aPlayers.Get(aPl1 - 1)->Nick()<<" with "<<aPlayers.Get(aPl2 - 1)->Nick()<<" bad "<<aTeamIter->second<<endl;
-  }
-  map<int, double>::iterator aContraIter = contraBad.begin();
-  for(; aContraIter != contraBad.end(); aContraIter++) {
-    if (aContraIter->first == 0) continue;
-    int aPl1, aPl2;
-    DecodeID(aContraIter->first, aPl1, aPl2);
-    tada<<aPlayers.Get(aPl1 - 1)->Nick()<<" vs "<<aPlayers.Get(aPl2 - 1)->Nick()<<" bad "<<aContraIter->second<<endl;
-  }
-  map<int, double>::iterator aContraSIter = contraSinglesBad.begin();
-  for(; aContraSIter != contraSinglesBad.end(); aContraSIter++) {
-    if (aContraSIter->first == 0) continue;
-    int aPl1, aPl2;
-    DecodeID(aContraSIter->first, aPl1, aPl2);
-    tada<<"Singles: "<<aPlayers.Get(aPl1 - 1)->Nick()<<" vs "<<aPlayers.Get(aPl2 - 1)->Nick()<<" bad "<<aContraSIter->second<<endl;
   }
   // prepare a variant by variant to find the best and put it into myPlayers
   int* aVar = new int [aNumberOfHere]; // index of unused player at the position

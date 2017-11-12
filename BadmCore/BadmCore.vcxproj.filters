@@ -32,6 +32,9 @@
     <ClInclude Include="results.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="badness.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="game.cxx">
@@ -53,6 +56,9 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="results.cxx">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="badness.cxx">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

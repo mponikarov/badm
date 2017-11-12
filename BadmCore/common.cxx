@@ -478,7 +478,7 @@ std::string Common::saveReport()
       if (aCurrentGame->NumWin(true) + aCurrentGame->NumWin(false) == 3)
         sql<<aCurrentGame->Score(4)<<" as set3_12, "<<aCurrentGame->Score(5)<<" as set3_34,"<<endl;
       else sql<<"0 as set3_12, 0 as set3_34,"<<endl;
-      sql<<"    0 as type, 44 as tournament"<<endl;
+      sql<<"    0 as type, 45 as tournament"<<endl;
       sql<<"  from"<<endl;
       sql<<"    (select max(id)+1 as max_id from games) maxid_table,"<<endl;
       sql<<"    (select id as id1 from players where nick='"<<aCurrentGame->GetPlayer(aPl0)->Nick()<<"') id1_table,"<<endl;
