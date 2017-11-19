@@ -1,3 +1,4 @@
+#include <math.h>
 #include "badness.h"
 
 Badness::Badness()
