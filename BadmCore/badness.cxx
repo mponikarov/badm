@@ -32,7 +32,7 @@ void Badness::framePassed()
 {
   map<int, pair<int, double> >::iterator anOcc = myOccur.begin();
   for(; anOcc != myOccur.end(); anOcc++) {
-    anOcc->second.second += 0.1;
+    anOcc->second.second += 0.2;
   }
 }
 
@@ -79,10 +79,10 @@ double Badness::badness(BadnessKind theKind, const int thePl1, const int thePl2)
   double aBadness;
   switch(theKind) {
   case BAD_INTEAM:
-    aBadness = 0.02;
+    aBadness = 0.01;
     break;
   case BAD_CONTRADOUBLE:
-    aBadness = 0.01;
+    aBadness = 0.002; // don't need to be too big: it is minor
     break;
   case BAD_CONTRASINGLE:
     aBadness = 0.2;
@@ -95,8 +95,8 @@ double Badness::badness(BadnessKind theKind, const int thePl1, const int thePl2)
   if (anOccur == myOccur.end()) { // not occured => no badness
     aBadness = 0;
   } else {
-    aBadness *= pow(2., (double)(anOccur->second.first - 1)); // 2 in power of occurences
-    aBadness *= anOccur->second.second; // time influence
+    aBadness *= pow(1.3, (double)(anOccur->second.first - 1)); // 1.3 in power of occurences (< 1.4  > 1.1)
+    aBadness /= 5. * anOccur->second.second; // time influence
   }
   return aBadness;
 }
