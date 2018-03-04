@@ -88,14 +88,14 @@ const double Sample::TeamBadness(Players& theVariant, const int theStartIndex, b
     for(int aThis = 0; aThis < 2; aThis++) {
       Results* aResults = (aThis == 1) ? myResThis : myResOld;
       double aP1R = aResults->Rating(theVariant.Get(theStartIndex));
-      if (aP1R > 1.) aP1R = 1.;
+      if (aP1R > 1000.) aP1R = 1000.;
       double aP2R = aResults->Rating(theVariant.Get(theStartIndex + 1));
-      if (aP2R > 1.) aP2R = 1.;
+      if (aP2R > 1000.) aP2R = 1000.;
       double aRT1 = (1500. * aP1R - aP1R * aP1R + 1500. * aP2R - aP2R * aP2R) / (3000. - aP1R - aP2R);
       aP1R = aResults->Rating(theVariant.Get(theStartIndex + 2));
-      if (aP1R > 1.) aP1R = 1.;
+      if (aP1R > 1000.) aP1R = 1000.;
       aP2R = aResults->Rating(theVariant.Get(theStartIndex + 3));
-      if (aP2R > 1.) aP2R = 1.;
+      if (aP2R > 1000.) aP2R = 1000.;
       double aRT2 = (1500. * aP1R - aP1R * aP1R + 1500. * aP2R - aP2R * aP2R) / (3000. - aP1R - aP2R);
 
       double aMiddle = (aRT1 + aRT2) / 2.;

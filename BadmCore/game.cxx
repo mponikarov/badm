@@ -145,9 +145,9 @@ double Game::GetTeamRaiting(bool theFirstTeam, const Results* theResults)
     return theFirstTeam ? theResults->Rating(pls[0]) : theResults->Rating(pls[1]);
   }
   double aP1R = theFirstTeam ? theResults->Rating(pls[0]) : theResults->Rating(pls[2]);
-  if (aP1R > 1.) aP1R = 1.;
+  if (aP1R > 1000.) aP1R = 1000.;
   double aP2R = theFirstTeam ? theResults->Rating(pls[1]) : theResults->Rating(pls[3]);
-  if (aP2R > 1.) aP2R = 1.;
+  if (aP2R > 1000.) aP2R = 1000.;
   return (1500. * aP1R - aP1R * aP1R + 1500. * aP2R - aP2R * aP2R) / (3000. - aP1R - aP2R);
 }
 
